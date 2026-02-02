@@ -1,0 +1,232 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: vidyashaale-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-vidyashaale}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-vidyashaale_dev}
+      POSTGRES_DB: ${DB_NAME:-vidyashaale}
+    ports:
+      - "${DB_PORT:-5434}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-vidyashaale}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vidyashaale-network
+
+  # Redis for Bull Queue (Notifications)
+  redis:
+    image: redis:7-alpine
+    container_name: vidyashaale-redis
+    ports:
+      - "${REDIS_PORT:-6380}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vidyashaale-network
+
+  # MinIO for S3-compatible storage (development)
+  minio:
+    image: minio/minio:latest
+    container_name: vidyashaale-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-minioadmin}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - vidyashaale-network
+
+  # API Gateway
+  gateway:
+    build:
+      context: ./services/gateway
+      dockerfile: Dockerfile
+    container_name: vidyashaale-gateway
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=8080
+      - AUTH_SERVICE_URL=http://auth:8081
+      - CLASS_SERVICE_URL=http://class:8082
+      - MEETING_SERVICE_URL=http://meeting:8083
+      - RESOURCE_SERVICE_URL=http://resource:8084
+      - NOTIFICATION_SERVICE_URL=http://notification:8085
+      - JWT_SECRET=${JWT_SECRET}
+      - RATE_LIMIT_WINDOW_MS=60000
+      - RATE_LIMIT_MAX=100
+    depends_on:
+      - auth
+      - class
+      - meeting
+      - resource
+      - notification
+    networks:
+      - vidyashaale-network
+
+  # Auth Service
+  auth:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile
+    container_name: vidyashaale-auth
+    ports:
+      - "${AUTH_PORT:-8081}:8081"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=8081
+      - DATABASE_URL=postgresql://${DB_USER:-vidyashaale}:${DB_PASSWORD:-vidyashaale_dev}@postgres:5432/${DB_NAME:-vidyashaale}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ACCESS_EXPIRY=1h
+      - JWT_REFRESH_EXPIRY=7d
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - FROM_EMAIL=${FROM_EMAIL:-noreply@vidyashaale.com}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - vidyashaale-network
+
+  # Class Service
+  class:
+    build:
+      context: ./services/class
+      dockerfile: Dockerfile
+    container_name: vidyashaale-class
+    ports:
+      - "${CLASS_PORT:-8082}:8082"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=8082
+      - DATABASE_URL=postgresql://${DB_USER:-vidyashaale}:${DB_PASSWORD:-vidyashaale_dev}@postgres:5432/${DB_NAME:-vidyashaale}
+      - MEETING_SERVICE_URL=http://meeting:8083
+      - NOTIFICATION_SERVICE_URL=http://notification:8085
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - vidyashaale-network
+
+  # Meeting Service
+  meeting:
+    build:
+      context: ./services/meeting
+      dockerfile: Dockerfile
+    container_name: vidyashaale-meeting
+    ports:
+      - "${MEETING_PORT:-8083}:8083"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=8083
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+      - GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN}
+    networks:
+      - vidyashaale-network
+
+  # Resource Service
+  resource:
+    build:
+      context: ./services/resource
+      dockerfile: Dockerfile
+    container_name: vidyashaale-resource
+    ports:
+      - "${RESOURCE_PORT:-8084}:8084"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=8084
+      - DATABASE_URL=postgresql://${DB_USER:-vidyashaale}:${DB_PASSWORD:-vidyashaale_dev}@postgres:5432/${DB_NAME:-vidyashaale}
+      - STORAGE_TYPE=${STORAGE_TYPE:-LOCAL}
+      - STORAGE_LOCAL_PATH=/data/uploads
+      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT:-http://minio:9000}
+      - STORAGE_BUCKET=${STORAGE_BUCKET:-vidyashaale}
+      - STORAGE_ACCESS_KEY=${STORAGE_ACCESS_KEY:-minioadmin}
+      - STORAGE_SECRET_KEY=${STORAGE_SECRET_KEY:-minioadmin}
+      - MAX_FILE_SIZE=52428800
+      - NOTIFICATION_SERVICE_URL=http://notification:8085
+    volumes:
+      - uploads_data:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - vidyashaale-network
+
+  # Notification Service
+  notification:
+    build:
+      context: ./services/notification
+      dockerfile: Dockerfile
+    container_name: vidyashaale-notification
+    ports:
+      - "${NOTIFICATION_PORT:-8085}:8085"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=8085
+      - DATABASE_URL=postgresql://${DB_USER:-vidyashaale}:${DB_PASSWORD:-vidyashaale_dev}@postgres:5432/${DB_NAME:-vidyashaale}
+      - REDIS_URL=redis://redis:6379
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - FROM_EMAIL=${FROM_EMAIL:-noreply@vidyashaale.com}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - vidyashaale-network
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vidyashaale-frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - REACT_APP_API_URL=${API_URL:-http://localhost:8080}
+    depends_on:
+      - gateway
+    networks:
+      - vidyashaale-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  uploads_data:
+
+networks:
+  vidyashaale-network:
+    driver: bridge

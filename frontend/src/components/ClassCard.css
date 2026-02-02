@@ -1,0 +1,98 @@
+.class-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.class-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.class-card.past {
+  opacity: 0.7;
+}
+
+.class-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.class-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.class-name:hover {
+  color: var(--primary);
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge.live {
+  background: var(--danger);
+  color: var(--white);
+  animation: pulse 2s infinite;
+}
+
+.badge.soon {
+  background: var(--warning);
+  color: var(--white);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.class-topic {
+  color: var(--text-light);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.class-time {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.educator-name {
+  font-size: 14px;
+  color: var(--text-light);
+  margin-bottom: 16px;
+}
+
+.class-card-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.class-card-actions .btn {
+  flex: 1;
+  padding: 10px 16px;
+}
+
+.join-btn {
+  animation: pulse 2s infinite;
+}
+
+@media (max-width: 480px) {
+  .class-card-actions {
+    flex-direction: column;
+  }
+}

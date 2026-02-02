@@ -1,0 +1,277 @@
+.class-detail {
+  padding: 24px 0;
+}
+
+.class-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.class-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.class-header .class-topic {
+  color: var(--text-light);
+  font-size: 16px;
+}
+
+.class-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.class-meta {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  background: var(--white);
+  padding: 20px 24px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.meta-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.meeting-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.join-btn {
+  margin-left: 0;
+}
+
+.meeting-password {
+  font-size: 14px;
+  color: var(--text-light);
+}
+
+.class-description {
+  background: var(--white);
+  padding: 24px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+}
+
+.class-description h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.class-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.tab {
+  padding: 12px 24px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-light);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.tab-content {
+  background: var(--white);
+  padding: 24px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.tab-header {
+  margin-bottom: 20px;
+}
+
+.empty-message {
+  color: var(--text-light);
+  text-align: center;
+  padding: 40px 0;
+}
+
+.resources-list,
+.assignments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.resource-item,
+.assignment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.assignment-item {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.assignment-item:hover {
+  background: var(--background);
+}
+
+.resource-info,
+.assignment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.resource-name,
+.assignment-title {
+  font-weight: 500;
+}
+
+.resource-meta,
+.assignment-due {
+  font-size: 14px;
+  color: var(--text-light);
+}
+
+.assignment-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.assignment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.assignment-description {
+  color: var(--text-light);
+  font-size: 14px;
+  margin: 8px 0;
+}
+
+.assignment-resources {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.resources-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-light);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.resource-item.compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--background);
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.resource-item.compact .resource-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.resource-item.compact .resource-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.resource-item.compact .resource-meta {
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .class-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .class-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .join-btn {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .class-tabs {
+    overflow-x: auto;
+  }
+
+  .tab {
+    white-space: nowrap;
+  }
+}
