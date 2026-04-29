@@ -6,10 +6,10 @@ Vidyashaale is a simple and user-friendly online education platform that helps s
 ## Tech Stack
 - Frontend: ReactJS
 - Backend: Node.js with Express
-- Database: PostgreSQL
-- Video Meetings: Google Meet API
-- File Storage: Configurable (Local filesystem, AWS S3, or MinIO)
-- Containers: Docker
+- Database: PostgreSQL (local Docker container by default; InsForge-hosted Postgres also supported)
+- Video Meetings: Google Meet API (optional — service falls back to manual meeting links when not configured)
+- File Storage: Configurable — local filesystem (default), AWS S3, or InsForge object storage
+- Containers: Docker (Compose `containerized` profile gates app services so default `up` brings up only Postgres + Redis)
 - Architecture: Microservices
 
 ## Project Conventions
@@ -57,6 +57,7 @@ Vidyashaale is a simple and user-friendly online education platform that helps s
 - GDPR/privacy compliance for user data
 
 ## External Dependencies
-- Google Meet API for video conferencing
-- SMTP service for email notifications
-- AWS S3 / MinIO for file storage (configurable)
+- Google Meet API for video conferencing (optional)
+- SMTP service for email notifications (optional in dev — logs to console when SMTP_HOST is unset)
+- File storage backend (configurable): local filesystem, AWS S3, or InsForge object storage
+- InsForge (optional managed Postgres + object storage; default setup uses a local Postgres container)

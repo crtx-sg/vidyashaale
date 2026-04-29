@@ -9,23 +9,26 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "docker-compose up -d && npm run dev:services",
-    "dev:services": "concurrently \"npm run dev -w services/gateway\" \"npm run dev -w services/auth\" \"npm run dev -w services/class\" \"npm run dev -w services/meeting\" \"npm run dev -w services/resource\" \"npm run dev -w services/notification\"",
-    "dev:frontend": "npm run dev -w frontend",
+    "dev": "npm run dev:infra && dotenv -e .env -- concurrently -k -n gateway,auth,class,meeting,resource,notification,frontend \"npm run dev -w services/gateway\" \"npm run dev -w services/auth\" \"npm run dev -w services/class\" \"npm run dev -w services/meeting\" \"npm run dev -w services/resource\" \"npm run dev -w services/notification\" \"npm run dev -w frontend\"",
+    "dev:services": "dotenv -e .env -- concurrently -k -n gateway,auth,class,meeting,resource,notification \"npm run dev -w services/gateway\" \"npm run dev -w services/auth\" \"npm run dev -w services/class\" \"npm run dev -w services/meeting\" \"npm run dev -w services/resource\" \"npm run dev -w services/notification\"",
+    "dev:frontend": "dotenv -e .env -- npm run dev -w frontend",
+    "dev:infra": "docker compose up -d postgres redis",
+    "dev:infra:down": "docker compose down",
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
-    "db:migrate": "npm run migrate -w services/auth",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f"
+    "db:migrate": "dotenv -e .env -- bash -c 'psql \"$DATABASE_URL\" -f database/init.sql'",
+    "docker:up": "docker compose --profile containerized up -d",
+    "docker:down": "docker compose --profile containerized down",
+    "docker:logs": "docker compose logs -f"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "concurrently": "^8.2.0",
+    "dotenv-cli": "^7.4.2",
     "eslint": "^8.45.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-react": "^7.33.0",
