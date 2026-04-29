@@ -279,17 +279,16 @@ app.get('/resources/:id/download', async (req: Request, res: Response, next: Nex
 
     const { storage_path, original_filename, mime_type } = result.rows[0];
 
-    // Get signed URL or download directly based on storage type
-    const storageType = process.env.STORAGE_TYPE || 'LOCAL';
+    // LOCAL and INSFORGE stream through the service (private bucket; no
+    // signed-URL support in the InsForge SDK). S3/MinIO redirect to a signed URL.
+    const storageType = (process.env.STORAGE_TYPE || 'LOCAL').toUpperCase();
 
-    if (storageType === 'LOCAL') {
-      // For local storage, send file directly
+    if (storageType === 'LOCAL' || storageType === 'INSFORGE') {
       const fileBuffer = await storage.download(storage_path);
       res.setHeader('Content-Disposition', `attachment; filename="${original_filename}"`);
       res.setHeader('Content-Type', mime_type || 'application/octet-stream');
       return res.send(fileBuffer);
     } else {
-      // For S3/MinIO, redirect to signed URL
       const signedUrl = await storage.getSignedUrl(storage_path, 3600); // 1 hour expiry
       return res.json({
         success: true,

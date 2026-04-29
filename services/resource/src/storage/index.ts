@@ -1,11 +1,12 @@
 import { StorageProvider } from './interface';
 import { LocalStorageProvider } from './local';
 import { S3StorageProvider } from './s3';
+import { InsforgeStorageProvider } from './insforge';
 
-export type StorageType = 'LOCAL' | 'S3' | 'MINIO';
+export type StorageType = 'LOCAL' | 'S3' | 'INSFORGE';
 
 export function createStorageProvider(): StorageProvider {
-  const storageType = (process.env.STORAGE_TYPE || 'LOCAL').toUpperCase() as StorageType;
+  const storageType = (process.env.STORAGE_TYPE || 'INSFORGE').toUpperCase() as StorageType;
 
   switch (storageType) {
     case 'LOCAL':
@@ -22,14 +23,12 @@ export function createStorageProvider(): StorageProvider {
         bucket: process.env.STORAGE_BUCKET || 'vidyashaale',
       });
 
-    case 'MINIO':
-      console.log(`Using MinIO storage at: ${process.env.STORAGE_ENDPOINT}`);
-      return new S3StorageProvider({
-        endpoint: process.env.STORAGE_ENDPOINT || 'http://localhost:9000',
-        accessKeyId: process.env.STORAGE_ACCESS_KEY || 'minioadmin',
-        secretAccessKey: process.env.STORAGE_SECRET_KEY || 'minioadmin',
+    case 'INSFORGE':
+      console.log(`Using InsForge storage at: ${process.env.INSFORGE_URL}`);
+      return new InsforgeStorageProvider({
+        url: process.env.INSFORGE_URL || '',
+        anonKey: process.env.INSFORGE_ANON_KEY || '',
         bucket: process.env.STORAGE_BUCKET || 'vidyashaale',
-        forcePathStyle: true,
       });
 
     default:

@@ -222,7 +222,7 @@ export interface NotificationPayload {
 // Storage Types
 // -----------------------------------------------------------------------------
 
-export type StorageType = 'LOCAL' | 'S3' | 'MINIO';
+export type StorageType = 'LOCAL' | 'S3' | 'INSFORGE';
 
 // -----------------------------------------------------------------------------
 // Constants

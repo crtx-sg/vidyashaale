@@ -30,7 +30,7 @@ Vidyashaale is a full-featured Learning Management System (LMS) built with a mic
 - Multiple resource types: readings, notes, assignments
 - 50MB file size limit per upload
 - 500MB storage quota per class
-- S3-compatible storage (MinIO for development, AWS S3 for production)
+- InsForge-hosted object storage (private bucket, downloads streamed via service)
 
 ### Assignments
 - Create assignments with due dates
@@ -55,9 +55,8 @@ Vidyashaale is a full-featured Learning Management System (LMS) built with a mic
 ### Backend
 - Node.js with Express.js
 - TypeScript
-- PostgreSQL 15 (primary database)
+- InsForge (managed PostgreSQL + object storage)
 - Redis 7 (notification queue)
-- MinIO (S3-compatible storage)
 
 ### Infrastructure
 - Docker & Docker Compose
@@ -81,10 +80,11 @@ Vidyashaale is a full-featured Learning Management System (LMS) built with a mic
         │            │                         │       └────┬────┘       │
         └────────────┴─────────────────────────┴────────────┴────────────┘
                                     │
-                            ┌───────┴───────┐
-                            │  PostgreSQL   │
-                            │   (:5432)     │
-                            └───────────────┘
+                            ┌───────┴────────────┐
+                            │  InsForge          │
+                            │ (Postgres + Object │
+                            │       Storage)     │
+                            └────────────────────┘
 ```
 
 ### Services
@@ -130,6 +130,7 @@ vidyashaale/
 
 - Node.js >= 18.0.0
 - Docker & Docker Compose
+- An InsForge project (for Postgres + storage) — see https://insforge.dev
 - Gmail account with App Password (for SMTP)
 - Google Cloud project (for Meet integration, optional)
 
@@ -161,6 +162,15 @@ nano .env
 # JWT (required)
 JWT_SECRET=<generated-secret>
 
+# InsForge: Postgres connection string (required)
+DATABASE_URL=postgresql://postgres:edb7cdfa3497e271ae4576e3eaaf58d1@wk73xmua.ap-southeast.database.insforge.app:5432/insforge?sslmode=require
+
+# InsForge: object storage (required for resource uploads)
+STORAGE_TYPE=INSFORGE
+INSFORGE_URL=https://your-project.us-east.insforge.app
+INSFORGE_ANON_KEY=your-insforge-anon-key
+STORAGE_BUCKET=vidyashaale
+
 # SMTP for email notifications (required for production)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
@@ -172,6 +182,23 @@ FROM_EMAIL=noreply@yourdomain.com
 GOOGLE_CLIENT_ID=your-client-id
 GOOGLE_CLIENT_SECRET=your-client-secret
 GOOGLE_REFRESH_TOKEN=your-refresh-token
+```
+
+### 3a. One-Time InsForge Setup
+
+```bash
+# Link or create the InsForge project (writes .insforge/project.json)
+npx @insforge/cli link        # existing project
+# or: npx @insforge/cli create
+
+# Get your anon key
+npx @insforge/cli secrets get ANON_KEY
+
+# Apply the schema to the InsForge-hosted Postgres
+psql "$DATABASE_URL" -f database/init.sql
+
+# Create the private storage bucket (must match STORAGE_BUCKET)
+# via the InsForge dashboard or admin API
 ```
 
 ### 4. Start with Docker
@@ -191,7 +218,6 @@ docker compose down
 
 - **Frontend**: http://localhost:3000
 - **API**: http://localhost:8080
-- **MinIO Console**: http://localhost:9001 (admin: minioadmin/minioadmin)
 
 ## Development Setup
 
@@ -213,14 +239,12 @@ npm run dev:frontend    # Frontend only
 npm run dev:services    # All backend services
 ```
 
-### Database Setup (without Docker)
+### Database Setup
+
+The database is hosted on InsForge. Apply the schema once:
 
 ```bash
-# Create database
-createdb vidyashaale
-
-# Run schema
-psql -d vidyashaale -f database/init.sql
+psql "$DATABASE_URL" -f database/init.sql
 ```
 
 ## Configuration Reference
@@ -229,13 +253,13 @@ psql -d vidyashaale -f database/init.sql
 |----------|---------|-------------|
 | `NODE_ENV` | development | Environment mode |
 | `JWT_SECRET` | - | Secret for JWT signing (required) |
-| `DB_USER` | vidyashaale | PostgreSQL username |
-| `DB_PASSWORD` | vidyashaale_dev | PostgreSQL password |
-| `DB_NAME` | vidyashaale | PostgreSQL database name |
-| `DB_PORT` | 5432 | PostgreSQL port |
+| `DATABASE_URL` | - | InsForge Postgres connection string (required) |
 | `REDIS_PORT` | 6379 | Redis port |
-| `STORAGE_TYPE` | LOCAL | Storage backend (LOCAL, S3, MINIO) |
-| `STORAGE_LOCAL_PATH` | /data/uploads | Local storage path |
+| `STORAGE_TYPE` | INSFORGE | Storage backend (INSFORGE, LOCAL, S3) |
+| `INSFORGE_URL` | - | InsForge project base URL (when STORAGE_TYPE=INSFORGE) |
+| `INSFORGE_ANON_KEY` | - | InsForge anon key (when STORAGE_TYPE=INSFORGE) |
+| `STORAGE_BUCKET` | vidyashaale | Object storage bucket name |
+| `STORAGE_LOCAL_PATH` | /data/uploads | Local storage path (when STORAGE_TYPE=LOCAL) |
 | `MAX_FILE_SIZE` | 52428800 | Max upload size (50MB) |
 | `RATE_LIMIT_MAX` | 100 | Max requests per window |
 | `RATE_LIMIT_WINDOW_MS` | 60000 | Rate limit window (1 minute) |
@@ -305,14 +329,14 @@ npm run format
 3. Generate App Password at https://myaccount.google.com/apppasswords
 
 ### Files Not Uploading
-1. Check storage path configuration in `.env`
-2. Verify Docker volume is mounted: `docker volume inspect vidyashaale_uploads_data`
+1. Verify `INSFORGE_URL`, `INSFORGE_ANON_KEY`, and `STORAGE_BUCKET` are set
+2. Confirm the bucket exists in the InsForge dashboard
 3. Check container logs: `docker logs vidyashaale-resource`
 
 ### Database Connection Issues
-1. Ensure PostgreSQL is running: `docker compose ps`
+1. Verify `DATABASE_URL` is set and reachable: `psql "$DATABASE_URL" -c "select 1"`
 2. Check connection string in service logs
-3. Verify database initialization: `docker logs vidyashaale-postgres`
+3. Ensure schema was applied: `psql "$DATABASE_URL" -f database/init.sql`
 
 ## License
 
