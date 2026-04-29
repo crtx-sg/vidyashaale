@@ -59,6 +59,21 @@ CREATE TABLE enrollments (
 );
 
 -- -----------------------------------------------------------------------------
+-- Assignments Table
+-- -----------------------------------------------------------------------------
+CREATE TABLE assignments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    class_id UUID NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    due_date TIMESTAMP,
+    max_file_size INTEGER DEFAULT 52428800, -- 50MB default
+    allowed_file_types TEXT[] DEFAULT ARRAY['pdf', 'doc', 'docx', 'txt', 'zip'],
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- -----------------------------------------------------------------------------
 -- Resources Table
 -- -----------------------------------------------------------------------------
 CREATE TABLE resources (
@@ -73,21 +88,6 @@ CREATE TABLE resources (
     file_size INTEGER NOT NULL CHECK (file_size > 0),
     mime_type VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- -----------------------------------------------------------------------------
--- Assignments Table
--- -----------------------------------------------------------------------------
-CREATE TABLE assignments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    class_id UUID NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    due_date TIMESTAMP,
-    max_file_size INTEGER DEFAULT 52428800, -- 50MB default
-    allowed_file_types TEXT[] DEFAULT ARRAY['pdf', 'doc', 'docx', 'txt', 'zip'],
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- -----------------------------------------------------------------------------
